@@ -86,7 +86,7 @@ if(MLX_METAL_JIT)
   make_jit_source(steel/attn/kernels/steel_attention)
 
   if(MLX_METAL_VERSION GREATER_EQUAL 400
-     AND MACOS_SDK_VERSION VERSION_GREATER_EQUAL 26.2
+     AND MLX_METAL_SDK_VERSION VERSION_GREATER_EQUAL 26.2
      AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_GREATER_EQUAL 26.2)
 
     make_jit_source(
@@ -105,11 +105,9 @@ if(MLX_METAL_JIT)
 
   else()
     message(
-      WARNING "NAX kernels require Metal 4, macOS SDK >= 26.2, and "
-              "MACOSX_DEPLOYMENT_TARGET >= 26.2 (SDK ${MACOS_SDK_VERSION}, "
-              "CMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}). "
-              "Building without NAX kernels.")
-    target_compile_definitions(mlx PRIVATE MLX_METAL_NO_NAX)
+      FATAL_ERROR "NAX kernels require Metal 4, SDK >= 26.2, and "
+              "MACOSX_DEPLOYMENT_TARGET >= 26.2 (SDK ${MLX_METAL_SDK_VERSION}, "
+              "CMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}).")
   endif()
 
 else()
@@ -159,3 +157,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/kernels)
 
 target_compile_definitions(mlx
                            PRIVATE METAL_PATH="${MLX_METAL_PATH}/mlx.metallib")
+
+if(NOT MLX_SWIFTPM_BUNDLE STREQUAL "")
+  target_compile_definitions(mlx
+                             PRIVATE "SWIFTPM_BUNDLE=\"${MLX_SWIFTPM_BUNDLE}\"")
+endif()
