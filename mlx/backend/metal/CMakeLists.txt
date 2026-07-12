@@ -142,3 +142,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/kernels)
 
 target_compile_definitions(mlx
                            PRIVATE METAL_PATH="${MLX_METAL_PATH}/mlx.metallib")
+
+if(NOT MLX_SWIFTPM_BUNDLE STREQUAL "")
+  target_compile_definitions(mlx
+                             PRIVATE "SWIFTPM_BUNDLE=\"${MLX_SWIFTPM_BUNDLE}\"")
+endif()

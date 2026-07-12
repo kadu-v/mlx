@@ -1,3 +1,17 @@
+# Select the Metal toolchain SDK and deployment-target flag.
+# CMAKE_SYSTEM_NAME is "iOS" for both device and simulator; the resolved
+# CMAKE_OSX_SYSROOT (an SDK path) disambiguates the two.
+if(CMAKE_OSX_SYSROOT MATCHES "[iI][pP]hone[sS]imulator")
+  set(MLX_METAL_SDK iphonesimulator)
+  set(MLX_METAL_MIN_FLAG "-mios-simulator-version-min")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  set(MLX_METAL_SDK iphoneos)
+  set(MLX_METAL_MIN_FLAG "-mios-version-min")
+else()
+  set(MLX_METAL_SDK macosx)
+  set(MLX_METAL_MIN_FLAG "-mmacosx-version-min")
+endif()
+
 set(BASE_HEADERS
     bf16.h
     bf16_math.h
@@ -26,10 +40,10 @@ function(build_kernel_base TARGET SRCFILE DEPS)
   endif()
   if(NOT CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "")
     set(METAL_FLAGS ${METAL_FLAGS}
-                    "-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+                    "${MLX_METAL_MIN_FLAG}=${CMAKE_OSX_DEPLOYMENT_TARGET}")
   endif()
   add_custom_command(
-    COMMAND xcrun -sdk macosx metal ${METAL_FLAGS} -c ${SRCFILE}
+    COMMAND xcrun -sdk ${MLX_METAL_SDK} metal ${METAL_FLAGS} -c ${SRCFILE}
             -I${PROJECT_SOURCE_DIR} -o ${TARGET}.air
     DEPENDS ${SRCFILE} ${DEPS} ${BASE_HEADERS}
     OUTPUT ${TARGET}.air
@@ -174,7 +188,7 @@ endif()
 
 add_custom_command(
   OUTPUT ${MLX_METAL_PATH}/mlx.metallib
-  COMMAND xcrun -sdk macosx metallib ${KERNEL_AIR} -o
+  COMMAND xcrun -sdk ${MLX_METAL_SDK} metallib ${KERNEL_AIR} -o
           ${MLX_METAL_PATH}/mlx.metallib
   DEPENDS ${KERNEL_AIR}
   COMMENT "Building mlx.metallib"

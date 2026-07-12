@@ -43,6 +43,8 @@ option(MLX_BUILD_SAFETENSORS "Include support for safetensors format" ON)
 option(MLX_BUILD_PYTHON_STUBS "Build stub files for python bindings" ON)
 option(MLX_METAL_JIT "Use JIT compilation for Metal kernels" OFF)
 option(MLX_USE_CCACHE "Use CCache for compilation cache when available" ON)
+set(MLX_SWIFTPM_BUNDLE ""
+    CACHE STRING "SwiftPM bundle name to search for default.metallib at runtime")
 option(BUILD_SHARED_LIBS "Build mlx as a shared library" OFF)
 option(USE_SYSTEM_FMT "Use system's provided fmt library" OFF)
 option(USE_ASAN "Enable AddressSanitizer (ASan)" OFF)
@@ -203,6 +205,19 @@ if(MLX_BUILD_METAL)
         zsh "-c"
         "echo \"__METAL_VERSION__\" | xcrun -sdk macosx metal ${XCRUN_FLAGS} -E -x metal -P - | tail -1 | tr -d '\n'"
       OUTPUT_VARIABLE MLX_METAL_VERSION COMMAND_ERROR_IS_FATAL ANY)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    # Probe the Metal language version with the iphoneos SDK so version-gated
+    # kernels and flags behave consistently with device capabilities.
+    set(XCRUN_FLAGS "")
+    if(NOT CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "")
+      set(XCRUN_FLAGS "-mios-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    endif()
+    execute_process(
+      COMMAND
+        zsh "-c"
+        "echo \"__METAL_VERSION__\" | xcrun -sdk iphoneos metal ${XCRUN_FLAGS} -E -x metal -P - | tail -1 | tr -d '\n'"
+      OUTPUT_VARIABLE MLX_METAL_VERSION COMMAND_ERROR_IS_FATAL ANY)
+    message(STATUS "iOS Metal language version: ${MLX_METAL_VERSION}")
   else()
     set(MLX_METAL_VERSION 0)
   endif()
